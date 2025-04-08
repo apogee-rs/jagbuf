@@ -120,7 +120,7 @@ func TestBuffer_ReadWriteMixedEndianness(t *testing.T) {
 func TestBuffer_ReadInt24(t *testing.T) {
 	buffer := NewWithCapacity(64)
 
-	buffer.WriteUint24(8388608) //overflows 24-bit
+	buffer.WriteInt24(8388608) //overflows 24-bit
 
 	val, err := buffer.ReadInt24()
 	if err != nil {
@@ -128,14 +128,29 @@ func TestBuffer_ReadInt24(t *testing.T) {
 	}
 
 	if val != -8388608 {
-		fmt.Printf("ReadInt24 fail: Expected -8388608 but received 0x%x", val)
+		fmt.Printf("ReadInt24 fail: Expected -8388608 but received %d", val)
+	}
+}
+
+func TestBuffer_ReadInt24_WithNeg(t *testing.T) {
+	buffer := NewWithCapacity(64)
+
+	buffer.WriteInt24(-8388609) //under flows 24-bit
+
+	val, err := buffer.ReadInt24()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if val != 8388607 {
+		fmt.Printf("ReadInt24 fail: Expected 8388607 but received %d", val)
 	}
 }
 
 func TestBuffer_ReadInt24LE(t *testing.T) {
 	buffer := NewWithCapacity(64)
 
-	buffer.WriteUint24LE(8388608) //overflows 24-bit
+	buffer.WriteInt24LE(8388608) //overflows 24-bit
 
 	val, err := buffer.ReadInt24LE()
 	if err != nil {
@@ -143,6 +158,36 @@ func TestBuffer_ReadInt24LE(t *testing.T) {
 	}
 
 	if val != -8388608 {
-		fmt.Printf("ReadInt24LE fail: Expected -8388608 but received 0x%x", val)
+		fmt.Printf("ReadInt24LE fail: Expected -8388608 but received %d", val)
+	}
+}
+
+func TestBuffer_ReadInt24LE_WithNeg(t *testing.T) {
+	buffer := NewWithCapacity(64)
+
+	buffer.WriteInt24LE(-8388609) //under flows 24-bit
+
+	val, err := buffer.ReadInt24LE()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if val != 8388607 {
+		fmt.Printf("ReadInt24LE fail: Expected 8388607 but received %d (0x%x)", val, val)
+	}
+}
+
+func TestBuffer_WriteInt32(t *testing.T) {
+	buffer := NewWithCapacity(64)
+
+	buffer.WriteInt32(-32768)
+
+	val, err := buffer.ReadInt32()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if val != -32768 {
+		fmt.Printf("WriteInt32 fail: Expected -32768 but received %d", val)
 	}
 }
