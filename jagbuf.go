@@ -216,7 +216,7 @@ func (b *Buffer) ReadInt24LE() (int32, error) {
 	var val int32 = 0
 	if (b.data[b.readIndex+2] & 0x80) != 0 {
 		//sign extend if negative
-		val |= -8388608
+		val = -8388608
 	}
 
 	val |= int32(b.data[b.readIndex+2]) << 16
@@ -405,6 +405,10 @@ func (b *Buffer) WriteUint8(v uint8) {
 	defer func() { b.writeIndex += 1 }()
 }
 
+func (b *Buffer) WriteInt8(v int8) {
+	b.WriteUint8(uint8(v))
+}
+
 func (b *Buffer) WriteUint16(v uint16) {
 	b.ensureWritable(2)
 
@@ -414,6 +418,10 @@ func (b *Buffer) WriteUint16(v uint16) {
 	defer func() { b.writeIndex += 2 }()
 }
 
+func (b *Buffer) WriteInt16(v int16) {
+	b.WriteUint16(uint16(v))
+}
+
 func (b *Buffer) WriteUint16LE(v uint16) {
 	b.ensureWritable(2)
 
@@ -421,6 +429,10 @@ func (b *Buffer) WriteUint16LE(v uint16) {
 	b.data[b.writeIndex+1] = byte(v >> 8)
 
 	defer func() { b.writeIndex += 2 }()
+}
+
+func (b *Buffer) WriteInt16LE(v int16) {
+	b.WriteUint16LE(uint16(v))
 }
 
 func (b *Buffer) WriteUint24(v uint32) {
@@ -433,6 +445,10 @@ func (b *Buffer) WriteUint24(v uint32) {
 	defer func() { b.writeIndex += 3 }()
 }
 
+func (b *Buffer) WriteInt24(v int32) {
+	b.WriteUint24(uint32(v))
+}
+
 func (b *Buffer) WriteUint24LE(v uint32) {
 	b.ensureWritable(3)
 
@@ -441,6 +457,10 @@ func (b *Buffer) WriteUint24LE(v uint32) {
 	b.data[b.writeIndex+2] = byte(v >> 16)
 
 	defer func() { b.writeIndex += 3 }()
+}
+
+func (b *Buffer) WriteInt24LE(v int32) {
+	b.WriteUint24LE(uint32(v))
 }
 
 func (b *Buffer) WriteUint32(v uint32) {
@@ -454,6 +474,10 @@ func (b *Buffer) WriteUint32(v uint32) {
 	defer func() { b.writeIndex += 4 }()
 }
 
+func (b *Buffer) WriteInt32(v int32) {
+	b.WriteUint32(uint32(v))
+}
+
 func (b *Buffer) WriteUint32LE(v uint32) {
 	b.ensureWritable(4)
 
@@ -465,7 +489,11 @@ func (b *Buffer) WriteUint32LE(v uint32) {
 	defer func() { b.writeIndex += 4 }()
 }
 
-// WriteUint32V1 writes an int32 to the buffer using a special Jagex
+func (b *Buffer) WriteInt32LE(v int32) {
+	b.WriteUint32LE(uint32(v))
+}
+
+// WriteUint32V1 writes an uint32 to the buffer using a special Jagex
 // endianness. This is equivalent to big endian, with the first 2 bytes
 // shuffled to the end.
 func (b *Buffer) WriteUint32V1(v uint32) {
@@ -479,7 +507,14 @@ func (b *Buffer) WriteUint32V1(v uint32) {
 	defer func() { b.writeIndex += 4 }()
 }
 
-// WriteUint32V2 writes an int32 to the buffer using a special Jagex
+// WriteInt32V1 writes an int32 to the buffer using a special Jagex
+// endianness. This is equivalent to big endian, with the first 2 bytes
+// shuffled to the end.
+func (b *Buffer) WriteInt32V1(v int32) {
+	b.WriteUint32V1(uint32(v))
+}
+
+// WriteUint32V2 writes an uint32 to the buffer using a special Jagex
 // endianness. This is equivalent to little endian, with the first 2 bytes
 // shuffled to the end.
 func (b *Buffer) WriteUint32V2(v uint32) {
@@ -491,6 +526,13 @@ func (b *Buffer) WriteUint32V2(v uint32) {
 	b.data[b.writeIndex+3] = byte(v >> 8)
 
 	defer func() { b.writeIndex += 4 }()
+}
+
+// WriteInt32V2 writes an int32 to the buffer using a special Jagex
+// endianness. This is equivalent to little endian, with the first 2 bytes
+// shuffled to the end.
+func (b *Buffer) WriteInt32V2(v int32) {
+	b.WriteUint32V2(uint32(v))
 }
 
 func (b *Buffer) WriteUint64(v uint64) {
@@ -508,6 +550,10 @@ func (b *Buffer) WriteUint64(v uint64) {
 	defer func() { b.writeIndex += 8 }()
 }
 
+func (b *Buffer) WriteInt64(v int64) {
+	b.WriteUint64(uint64(v))
+}
+
 func (b *Buffer) WriteUint64LE(v uint64) {
 	b.ensureWritable(8)
 
@@ -521,4 +567,8 @@ func (b *Buffer) WriteUint64LE(v uint64) {
 	b.data[b.writeIndex+7] = byte(v >> 56)
 
 	defer func() { b.writeIndex += 8 }()
+}
+
+func (b *Buffer) WriteInt64LE(v int64) {
+	b.WriteUint64LE(uint64(v))
 }
