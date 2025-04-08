@@ -29,7 +29,7 @@ func TestBuffer_Grow(t *testing.T) {
 	buffer.Grow(64)
 
 	if buffer.Capacity() != 128 {
-		t.Error("NewWithCapacity fail: underlying buffer capacity is wrong")
+		t.Errorf("Grow fail: underlying buffer capacity expected 128, got %d", buffer.Capacity())
 	}
 }
 
@@ -40,7 +40,7 @@ func TestBuffer_Write(t *testing.T) {
 	_ = buffer.Write(data)
 
 	if !bytes.Equal(buffer.Bytes(), data) {
-		t.Error("Write fail: underlying buffer mismatch")
+		t.Errorf("Write fail: underlying buffer mismatch %v != %v", buffer.Bytes(), data)
 	}
 }
 
