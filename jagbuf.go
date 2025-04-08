@@ -1,6 +1,10 @@
 package jagbuf
 
-import "io"
+import (
+	"errors"
+	"io"
+	"strings"
+)
 
 type Buffer struct {
 	data       []byte
@@ -10,14 +14,14 @@ type Buffer struct {
 
 // NewBuffer creates a new buffer with an initial capacity of 64.
 func NewBuffer() *Buffer {
-	return NewBufferWithCapacity(64)
+	return NewWithCapacity(64)
 }
 
-// NewBufferWithCapacity creates a new buffer with the provided
+// NewWithCapacity creates a new buffer with the provided
 // initial capacity.
-func NewBufferWithCapacity(capacity int) *Buffer {
+func NewWithCapacity(capacity int) *Buffer {
 	return &Buffer{
-		data:       make([]byte, 0, capacity),
+		data:       make([]byte, capacity),
 		readIndex:  0,
 		writeIndex: 0,
 	}
@@ -67,6 +71,7 @@ func (b *Buffer) Bytes() []byte {
 }
 
 // Slice returns a new slice with a copy of the requested data.
+// Start (inclusive) to End (exclusive) - [start .. end)
 func (b *Buffer) Slice(start int, end int) []byte {
 	return append(make([]byte, 0, end-start), b.data[start:end]...)
 }
@@ -136,7 +141,7 @@ func (b *Buffer) ReadUint16() (uint16, error) {
 	return val, nil
 }
 
-func (b *Buffer) ReadLEUint16() (uint16, error) {
+func (b *Buffer) ReadUint16LE() (uint16, error) {
 	if b.ReadableBytes() < 2 {
 		return 0, io.EOF
 	}
@@ -153,8 +158,8 @@ func (b *Buffer) ReadInt16() (int16, error) {
 	return int16(val), err
 }
 
-func (b *Buffer) ReadLEInt16() (int16, error) {
-	val, err := b.ReadLEUint16()
+func (b *Buffer) ReadInt16LE() (int16, error) {
+	val, err := b.ReadUint16LE()
 	return int16(val), err
 }
 
@@ -171,7 +176,7 @@ func (b *Buffer) ReadUint24() (uint32, error) {
 	return val, nil
 }
 
-func (b *Buffer) ReadLEUint24() (uint32, error) {
+func (b *Buffer) ReadUint24LE() (uint32, error) {
 	if b.ReadableBytes() < 3 {
 		return 0, io.EOF
 	}
@@ -189,12 +194,12 @@ func (b *Buffer) ReadInt24() (int32, error) {
 	return int32(val), err
 }
 
-func (b *Buffer) ReadLEInt24() (int32, error) {
+func (b *Buffer) ReadInt24LE() (int32, error) {
 	if b.ReadableBytes() < 3 {
 		return 0, io.EOF
 	}
 
-	// TODO: Can we just cast ReadLEUint24 to an int32?
+	// TODO: Can we just cast ReadUint24LE to an int32?
 	// Or will overflows not be handled correctly?
 	val := int32(b.data[b.readIndex])
 	val |= int32(b.data[b.readIndex+1]) << 8
@@ -218,7 +223,7 @@ func (b *Buffer) ReadUint32() (uint32, error) {
 	return val, nil
 }
 
-func (b *Buffer) ReadLEUint32() (uint32, error) {
+func (b *Buffer) ReadUint32LE() (uint32, error) {
 	if b.ReadableBytes() < 4 {
 		return 0, io.EOF
 	}
@@ -237,8 +242,8 @@ func (b *Buffer) ReadInt32() (int32, error) {
 	return int32(val), err
 }
 
-func (b *Buffer) ReadLEInt32() (int32, error) {
-	val, err := b.ReadLEUint32()
+func (b *Buffer) ReadInt32LE() (int32, error) {
+	val, err := b.ReadUint32LE()
 	return int32(val), err
 }
 
@@ -260,7 +265,7 @@ func (b *Buffer) ReadUint64() (uint64, error) {
 	return val, nil
 }
 
-func (b *Buffer) ReadLEUint64() (uint64, error) {
+func (b *Buffer) ReadUint64LE() (uint64, error) {
 	if b.ReadableBytes() < 8 {
 		return 0, io.EOF
 	}
@@ -283,18 +288,44 @@ func (b *Buffer) ReadInt64() (int64, error) {
 	return int64(val), err
 }
 
-func (b *Buffer) ReadLEInt64() (int64, error) {
-	val, err := b.ReadLEUint64()
+func (b *Buffer) ReadInt64LE() (int64, error) {
+	val, err := b.ReadUint64LE()
 	return int64(val), err
+}
+
+func (b *Buffer) ReadString() (string, error) {
+	if b.ReadableBytes() < 1 {
+		return "", io.EOF
+	}
+
+	builder := &strings.Builder{}
+	for i := 0; b.data[b.readIndex+i] != 0; i++ {
+		builder.WriteByte(b.data[b.readIndex+i])
+	}
+
+	defer func() { b.readIndex += builder.Len() + 1 }()
+	return builder.String(), nil
+}
+
+func (b *Buffer) ReadJagString() (string, error) {
+	if b.ReadableBytes() < 1 {
+		return "", io.EOF
+	}
+
+	peek := b.data[b.readIndex]
+	b.readIndex++
+
+	if peek != 0 {
+		return "", errors.New("jagstring read: expected byte to be 0 in position 0")
+	}
+
+	return b.ReadString()
 }
 
 // Write will copy data into the buffer, and grow the underlying buffer
 // if there is not enough space.
 func (b *Buffer) Write(data []byte) int {
-	if b.WritableBytes() < len(data) {
-		// Grow by however many bytes we are short
-		b.Grow(len(data) - b.WritableBytes())
-	}
+	b.ensureWritable(len(data))
 
 	written := copy(b.data[b.writeIndex:], data)
 
