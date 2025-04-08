@@ -190,8 +190,22 @@ func (b *Buffer) ReadUint24LE() (uint32, error) {
 }
 
 func (b *Buffer) ReadInt24() (int32, error) {
-	val, err := b.ReadUint24()
-	return int32(val), err
+	if b.ReadableBytes() < 3 {
+		return 0, io.EOF
+	}
+
+	var val int32 = 0
+	if (b.data[b.readIndex] & 0x80) != 0 {
+		//sign extend if negative
+		val = -8388608
+	}
+
+	val |= int32(b.data[b.readIndex]) << 16
+	val |= int32(b.data[b.readIndex+1]) << 8
+	val |= int32(b.data[b.readIndex+2])
+
+	defer func() { b.readIndex += 3 }()
+	return val, nil
 }
 
 func (b *Buffer) ReadInt24LE() (int32, error) {
@@ -199,11 +213,15 @@ func (b *Buffer) ReadInt24LE() (int32, error) {
 		return 0, io.EOF
 	}
 
-	// TODO: Can we just cast ReadUint24LE to an int32?
-	// Or will overflows not be handled correctly?
-	val := int32(b.data[b.readIndex])
-	val |= int32(b.data[b.readIndex+1]) << 8
+	var val int32 = 0
+	if (b.data[b.readIndex+2] & 0x80) != 0 {
+		//sign extend if negative
+		val |= -8388608
+	}
+
 	val |= int32(b.data[b.readIndex+2]) << 16
+	val |= int32(b.data[b.readIndex+1]) << 8
+	val |= int32(b.data[b.readIndex])
 
 	defer func() { b.readIndex += 3 }()
 	return val, nil
@@ -420,7 +438,7 @@ func (b *Buffer) WriteUint24LE(v uint32) {
 
 	b.data[b.writeIndex] = byte(v & 0xFF)
 	b.data[b.writeIndex+1] = byte(v >> 8)
-	b.data[b.writeIndex+2] = byte(v & 0xFF)
+	b.data[b.writeIndex+2] = byte(v >> 16)
 
 	defer func() { b.writeIndex += 3 }()
 }

@@ -2,6 +2,7 @@ package jagbuf
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -113,5 +114,35 @@ func TestBuffer_ReadWriteMixedEndianness(t *testing.T) {
 
 	if val != 0x40302010 {
 		t.Errorf("Read/Write fail: Expected 0x40302010 but received 0x%x", val)
+	}
+}
+
+func TestBuffer_ReadInt24(t *testing.T) {
+	buffer := NewWithCapacity(64)
+
+	buffer.WriteUint24(8388608) //overflows 24-bit
+
+	val, err := buffer.ReadInt24()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if val != -8388608 {
+		fmt.Printf("ReadInt24 fail: Expected -8388608 but received 0x%x", val)
+	}
+}
+
+func TestBuffer_ReadInt24LE(t *testing.T) {
+	buffer := NewWithCapacity(64)
+
+	buffer.WriteUint24LE(8388608) //overflows 24-bit
+
+	val, err := buffer.ReadInt24LE()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if val != -8388608 {
+		fmt.Printf("ReadInt24LE fail: Expected -8388608 but received 0x%x", val)
 	}
 }
