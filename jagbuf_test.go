@@ -85,3 +85,33 @@ func TestBuffer_ReadJagString(t *testing.T) {
 		t.Errorf("ReadJagString fail: Expected \"%s\" but received \"%s\"", "hello world", str)
 	}
 }
+
+func TestBuffer_ReadWriteIntegrity(t *testing.T) {
+	buffer := NewWithCapacity(64)
+
+	buffer.WriteUint32(0x10203040)
+
+	val, err := buffer.ReadUint32()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if val != 0x10203040 {
+		t.Errorf("Read/Write fail: Expected 0x10203040 but received 0x%x", val)
+	}
+}
+
+func TestBuffer_ReadWriteMixedEndianness(t *testing.T) {
+	buffer := NewWithCapacity(64)
+
+	buffer.WriteUint32(0x10203040)
+
+	val, err := buffer.ReadUint32LE()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if val != 0x40302010 {
+		t.Errorf("Read/Write fail: Expected 0x40302010 but received 0x%x", val)
+	}
+}
