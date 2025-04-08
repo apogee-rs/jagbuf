@@ -6,6 +6,24 @@ import (
 	"testing"
 )
 
+func TestZeroValue(t *testing.T) {
+	buffer := Buffer{}
+	buffer.WriteInt8(0)
+
+	if buffer.Capacity() == 0 {
+		t.Errorf("Zero value buffer failed to automatically grow")
+	}
+}
+
+func TestZeroValue_Grow(t *testing.T) {
+	buffer := Buffer{}
+	buffer.Grow(4)
+
+	if buffer.Capacity() != 4 {
+		t.Errorf("Zero value buffer failed to grow. Expected capacity 4, got %d", buffer.Capacity())
+	}
+}
+
 func TestWrap(t *testing.T) {
 	data := []byte("test")
 	buffer := Wrap(data)

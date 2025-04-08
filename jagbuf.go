@@ -50,6 +50,12 @@ func (b *Buffer) Grow(n int) {
 }
 
 func (b *Buffer) ensureWritable(numBytes int) {
+	// For zero value buffers
+	if b.data == nil {
+		b.data = make([]byte, numBytes)
+		return
+	}
+
 	for b.WritableBytes() < numBytes {
 		// Double our capacity until we have enough room for numBytes
 		b.Grow(b.Capacity())
